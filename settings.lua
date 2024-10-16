@@ -117,8 +117,9 @@ end
 ---@param value_formatting string
 ---@param value_display_multiplier? number
 ---@param value_map? fun(value:number):number
+---@param width? integer
 local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value_formatting, value_display_multiplier,
-                                value_map)
+                                value_map, width)
   local empty = "data/ui_gfx/empty.png"
   local setting_id = mod_setting_get_id(mod_id, setting)
   local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
@@ -139,7 +140,7 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
 
   local value_new = GuiSlider(gui, im_id, 0, 0, setting.ui_name, value, setting.value_min,
     setting.value_max, setting.value_default, setting.value_slider_multiplier or 1, -- This affects the steps for slider aswell, so it's not just a visual thing.
-    " ", 64)
+    " ", width or 64)
   if value_map then
     value_new = value_map(value_new)
   end
@@ -166,18 +167,18 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
   end
 end
 
-local function mod_setting_integer(mod_id, gui, in_main_menu, im_id, setting)
+local function mod_setting_integer(mod_id, gui, in_main_menu, im_id, setting, width)
   ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, setting.value_display_formatting or "%d",
     setting.value_display_multiplier, function(value)
       return utils:FloorSliderValueInteger(value)
-    end)
+    end, width)
 end
 
-local function mod_setting_float(mod_id, gui, in_main_menu, im_id, setting)
+local function mod_setting_float(mod_id, gui, in_main_menu, im_id, setting, width)
   ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, setting.value_display_formatting or "%.1f",
     setting.value_display_multiplier, function(value)
       return utils:FloorSliderValueFloat(value, setting.value_precision)
-    end)
+    end, width)
 end
 
 
@@ -204,6 +205,7 @@ local rewards_deck = {}
 ---@field ui_fn function
 
 ---@class reward_setting
+---@field id string
 ---@field name_key string
 ---@field settings setting[]
 ---@field hidden boolean
@@ -300,11 +302,12 @@ function ModSettingsUpdate(init_scope)
                   value_precision = 2,
                   value_display_multiplier = 100,
                   value_display_formatting = " %d%%",
-                })
+                }, 48)
               end)
           end
           if #settings ~= 0 then
             table.insert(reward_settings, {
+              id = reward.id,
               name_key = reward.ui_name,
               settings = settings,
               hidden = false
@@ -410,9 +413,11 @@ function ModSettingsGui(gui, in_main_menu)
 
       GuiLayoutBeginHorizontal(gui, 0, 0, true)
 
-      GuiOptionsAdd(gui, GUI_OPTION.Layout_InsertOutsideLeft)
-      GuiText(gui, 0, 0, GameTextGetTranslatedOrNot(reward_setting.name_key))
-      GuiOptionsRemove(gui, GUI_OPTION.Layout_InsertOutsideLeft)
+      local text = GameTextGetTranslatedOrNot(reward_setting.name_key)
+      if text == "" then
+        text = reward_setting.id
+      end
+      GuiText(gui, 0, 0, text)
 
       for _, setting in ipairs(reward_setting.settings) do
         setting.ui_fn(MOD_ID, gui, in_main_menu, id(), setting)

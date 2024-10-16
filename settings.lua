@@ -409,6 +409,7 @@ function ModSettingsGui(gui, in_main_menu)
         text = reward_setting.id
       end
       GuiText(gui, 0, 0, text)
+      GuiTooltip(gui, reward_setting.id, "")
 
       GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
       mod_setting_group_x_offset = 82

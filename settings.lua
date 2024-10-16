@@ -10,6 +10,19 @@ function utils:ResolveModSettingId(id)
   return MOD_ID .. "." .. id
 end
 
+--- Returns translated text from $string
+--- @param string string should be in $string format
+--- @return string
+function Locale(string)
+  local pattern = "%$%w[%w_]*"
+  string = string:gsub(pattern, GameTextGetTranslatedOrNot, 1)
+  if string:find(pattern) then
+    return Locale(string)
+  else
+    return string
+  end
+end
+
 ---@param number number
 ---@param decimal? integer
 function utils:TruncateNumber(number, decimal)
@@ -239,7 +252,7 @@ end
 ---@param reward_setting reward_setting
 local function ResetTextStrings(reward_setting)
   -- Resetting cached translations
-  local reward_name = GameTextGetTranslatedOrNot(reward_setting.name_key)
+  local reward_name = Locale(reward_setting.name_key)
   if reward_name ~= "" then
     reward_setting._text = reward_name
   else

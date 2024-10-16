@@ -263,18 +263,15 @@ function ModSettingsUpdate(init_scope)
 
   -- Don't do migrations before mod_settings_update. since if it breaks, it'll prevent mod_settings_update from executing.
 
-  if ModIsEnabled(MOD_ID) then
-    print("IN RUNTIME", init_scope)
+  if init_scope >= MOD_SETTING_SCOPE_RUNTIME and ModIsEnabled(MOD_ID) then
     if not INIT_FLAG then
-      print("INITING")
       RewardsInit()
       local reward_list = GetRewardsList()
-      print(utils:DumbSerializeTable(reward_list))
       if ValidateRewardsList(reward_list) then
         for _, reward in ipairs(reward_list) do
           local settings = {} ---@type setting[]
           if reward.mlro_state.custom_check then
-            AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.custom_check,
+            AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.enable,
               TYPE.boolean, reward.mlro_state.custom_check, function(mod_id, gui, in_main_menu, im_id, setting)
                 local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
                 if type(value) ~= "boolean" then value = setting.value_default or false end
@@ -296,6 +293,7 @@ function ModSettingsUpdate(init_scope)
             AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.probability,
               TYPE.number, reward.mlro_state.probability, function(mod_id, gui, in_main_menu, im_id, setting)
                 mod_setting_float(mod_id, gui, in_main_menu, im_id, {
+                  id = setting.id,
                   value_default = setting.value_default,
                   value_min = 0,
                   value_max = 1,
@@ -333,7 +331,6 @@ function ModSettingsUpdate(init_scope)
 
     RUNTIME_FLAG = true
   else
-    print("NOT RUNTIME", init_scope)
     RUNTIME_FLAG = false
   end
 

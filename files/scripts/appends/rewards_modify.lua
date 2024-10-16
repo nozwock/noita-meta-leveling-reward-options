@@ -1,5 +1,5 @@
-local const = dofile_once("mods/meta-leveling-reward-options/files/const.lua") ---@type const
-local utils = dofile_once("mods/meta-leveling-reward-options/files/utils.lua") ---@type utils
+local const = dofile_once("mods/meta-leveling-reward-options/files/scripts/const.lua") ---@type const
+local utils = dofile_once("mods/meta-leveling-reward-options/files/scripts/utils.lua") ---@type utils
 
 local rewards_deck = dofile_once("mods/meta_leveling/files/scripts/classes/private/rewards_deck.lua") ---@type rewards_deck
 for _, reward in ipairs(rewards_deck.reward_definition_list) do

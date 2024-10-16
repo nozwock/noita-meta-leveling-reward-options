@@ -339,15 +339,13 @@ function ModSettingsUpdate(init_scope)
   end
 
   ModSettingSet(utils:ResolveModSettingId("_version"), mod_settings_version)
-
-  -- mod_settings_update(MOD_ID, mod_settings, init_scope)
 end
 
 -- This function should return the number of visible setting UI elements.
 -- Your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 -- If your mod changes the displayed settings dynamically, you might need to implement custom logic for this function.
 function ModSettingsGuiCount()
-  return 1 -- no idea why I'm doing this, just copied it from 'Start With Any Perks'
+  return 1 -- No idea why I'm doing this, just copied it from 'Start With Any Perks'
 end
 
 local function IdFactory()
@@ -363,8 +361,6 @@ local search_text = ""
 
 -- This function is called to display the settings UI for this mod. your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 function ModSettingsGui(gui, in_main_menu)
-  --- tell that setting is only available in-game in ModSettingGui
-  -- mod_settings_gui(MOD_ID, mod_settings, gui, in_main_menu)
   GuiIdPushString(gui, MOD_ID)
 
   if not in_main_menu and RUNTIME_FLAG and INIT_FLAG then
@@ -400,29 +396,36 @@ function ModSettingsGui(gui, in_main_menu)
     end
 
     GuiLayoutBeginVertical(gui, 0, 0, true)
+    GuiLayoutAddVerticalSpacing(gui, 2)
 
     for _, reward_setting in ipairs(reward_settings) do
       if reward_setting.hidden then goto continue end
+
+      GuiLayoutAddVerticalSpacing(gui, 1)
 
       local text = GameTextGetTranslatedOrNot(reward_setting.name_key)
       if text == "" then
         text = reward_setting.id
       end
+
+      GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
       GuiText(gui, 0, 0, text)
       GuiTooltip(gui, reward_setting.id, "")
 
-      GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
-      mod_setting_group_x_offset = 82
+      local offset = 10
+      mod_setting_group_x_offset = 150
       for _, setting in ipairs(reward_setting.settings) do
-        mod_setting_group_x_offset = mod_setting_group_x_offset + 10
+        if #reward_setting.settings == 1 and reward_setting.settings[1].id:find(reward_setting_suffix.probability .. "$", 0) ~= nil then -- don't think about it, and give up the thought of doing nolla gui while you still can.
+          mod_setting_group_x_offset = mod_setting_group_x_offset + offset + 10
+        end
         setting.ui_fn(MOD_ID, gui, in_main_menu, id(), setting)
-        GuiLayoutAddHorizontalSpacing(gui, 4)
+        mod_setting_group_x_offset = mod_setting_group_x_offset + offset + 10
       end
       GuiOptionsRemove(gui, GUI_OPTION.Layout_NextSameLine)
+      mod_setting_group_x_offset = 0
 
       ::continue::
     end
-
     GuiLayoutEnd(gui)
   else
     GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)

@@ -10,34 +10,6 @@ function utils:ResolveModSettingId(id)
   return MOD_ID .. "." .. id
 end
 
----For printing.
----@param t table
----@param depth integer|nil
-function utils:DumbSerializeTable(t, depth)
-  if not depth then
-    depth = 1
-  end
-  local t_prefix = "\n"
-  local t_end = "\n}"
-  if depth ~= 1 then
-    t_prefix = ""
-    t_end = "\n" .. string.rep("\t", depth - 1) .. "}"
-  end
-  local s = { t_prefix .. "{" }
-  for k, v in pairs(t) do
-    k = tostring(k)
-    if type(v) == "table" then
-      v = self:DumbSerializeTable(v, depth + 1)
-    else
-      v = tostring(v)
-    end
-    table.insert(s, "\n" .. string.rep("\t", depth) .. k .. " = " .. v .. ",")
-  end
-  s[#s] = s[#s]:gsub(",$", "")
-  table.insert(s, t_end)
-  return table.concat(s)
-end
-
 ---@param number number
 ---@param decimal? integer
 function utils:TruncateNumber(number, decimal)

@@ -236,6 +236,19 @@ local function AddToSettings(settings, id, type, value_default, ui_fn)
   ModSettingSetNextValue(utils:ResolveModSettingId(id), value_default, true) -- set default
 end
 
+---@param reward_setting reward_setting
+local function ResetTextStrings(reward_setting)
+  -- Resetting cached translations
+  local reward_name = GameTextGetTranslatedOrNot(reward_setting.name_key)
+  if reward_name ~= "" then
+    reward_setting._text = reward_name
+  else
+    reward_setting._text = reward_setting.id
+  end
+  reward_setting._description = rewards_deck:UnpackDescription(reward_setting.description.key,
+    reward_setting.description.var) or ""
+end
+
 -- This function is called to ensure the correct setting values are visible to the game. your mod's settings don't work if you don't have a function like this defined in settings.lua.
 function ModSettingsUpdate(init_scope)
   local old_version = mod_settings_get_version(MOD_ID) -- This can be used to migrate some settings between mod versions.
@@ -294,12 +307,13 @@ function ModSettingsUpdate(init_scope)
               settings = settings,
               hidden = false
             }
+            ResetTextStrings(reward_settings[#reward_settings])
           end
         end
 
         table.sort(reward_settings, function(a, b)
-          return GameTextGetTranslatedOrNot(a.name_key)
-              < GameTextGetTranslatedOrNot(b.name_key)
+          return GameTextGetTranslatedOrNot(a._text)
+              < GameTextGetTranslatedOrNot(b._text)
         end)
       end
 
@@ -307,16 +321,7 @@ function ModSettingsUpdate(init_scope)
     end
 
     for _, reward_setting in ipairs(reward_settings) do
-      -- Resetting cached translations
-      local reward_name = GameTextGetTranslatedOrNot(reward_setting.name_key)
-      if reward_name ~= "" then
-        reward_setting._text = reward_name
-      else
-        reward_setting._text = reward_setting.id
-      end
-      reward_setting._description = rewards_deck:UnpackDescription(reward_setting.description.key,
-        reward_setting.description.var) or ""
-
+      ResetTextStrings(reward_setting)
       for _, setting in ipairs(reward_setting.settings) do
         local id = utils:ResolveModSettingId(setting.id)
         local next_value = ModSettingGetNextValue(id)

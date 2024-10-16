@@ -93,6 +93,29 @@ local function CreateGuiSettingEnum(enum_values, info)
   end
 end
 
+---@param gui gui
+local function GetPreviousWidget(gui)
+  local clicked, right_clicked, hovered, x, y, width, height =
+      GuiGetPreviousWidgetInfo(gui)
+  ---@class widget_info
+  ---@field clicked boolean
+  ---@field right_clicked  boolean
+  ---@field hovered boolean
+  ---@field x number
+  ---@field y number
+  ---@field width number
+  ---@field height number
+  return {
+    clicked = clicked,
+    right_clicked = right_clicked,
+    hovered = hovered,
+    x = x,
+    y = y,
+    width = width,
+    height = height
+  }
+end
+
 
 ---@param mod_id string
 ---@param gui gui
@@ -111,38 +134,38 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
   if type(value) ~= "number" then value = setting.value_default or 0.0 end
   setting.ui_name = setting.ui_name or ""
 
-  GuiLayoutBeginHorizontal(gui, mod_setting_group_x_offset, 0, true)
-
   if setting.value_min == nil or setting.value_max == nil or setting.value_default == nil then
-    GuiText(gui, 0, 0, setting.ui_name .. " - not all required values are defined in setting definition")
+    GuiText(gui, mod_setting_group_x_offset, 0,
+      setting.ui_name .. " - not all required values are defined in setting definition")
     return
   end
 
-  GuiText(gui, 0, 0, "")
-  local x_start, y_start = select(4, GuiGetPreviousWidgetInfo(gui))
+  GuiText(gui, mod_setting_group_x_offset, 0, "")
+  local start = GetPreviousWidget(gui)
 
   GuiIdPushString(gui, MOD_ID .. setting_id)
 
-  local value_new = GuiSlider(gui, im_id, 0, 0, setting.ui_name, value, setting.value_min,
+  width = width or 64
+  local value_new = GuiSlider(gui, im_id, mod_setting_group_x_offset, 0, setting.ui_name, value, setting.value_min,
     setting.value_max, setting.value_default, setting.value_slider_multiplier or 1, -- This affects the steps for slider aswell, so it's not just a visual thing.
-    " ", width or 64)
+    " ", width)
   if value_map then
     value_new = value_map(value_new)
   end
 
-  local x_end, _, w, h = select(4, GuiGetPreviousWidgetInfo(gui))
+  local slider_info = GetPreviousWidget(gui)
   local display_text = string.format(value_formatting, value_new * (value_display_multiplier or 1))
   local tw = GuiGetTextDimensions(gui, display_text)
 
   mod_setting_tooltip(mod_id, gui, in_main_menu, setting)
 
   GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
-  GuiText(gui, 0, 0, display_text)
+  GuiText(gui, mod_setting_group_x_offset + width + 4, 0, display_text) -- note: xy values from GetPrevious are on global coordinates system
 
-  GuiImageNinePiece(gui, im_id + 2, x_start, y_start, x_end - x_start + w + tw - 2, h, 0, empty, empty)
+  GuiImageNinePiece(gui, im_id + 2, start.x, start.y, slider_info.x - start.x + slider_info.width + tw - 2,
+    slider_info.height, 0, empty, empty)
 
   GuiIdPop(gui)
-  GuiLayoutEnd(gui)
 
   if value ~= value_new then
     ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), value_new, false)
@@ -428,13 +451,12 @@ function ModSettingsGui(gui, in_main_menu)
       end
     end
 
-    GuiLayoutBeginVertical(gui, 0, 0, true)
     GuiLayoutAddVerticalSpacing(gui, 2)
 
     for _, reward_setting in ipairs(reward_settings) do
       if reward_setting.hidden then goto continue end
 
-      GuiLayoutAddVerticalSpacing(gui, 1)
+      GuiLayoutAddVerticalSpacing(gui, 2)
 
       GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
 
@@ -455,9 +477,9 @@ function ModSettingsGui(gui, in_main_menu)
       GuiOptionsRemove(gui, GUI_OPTION.Layout_NextSameLine)
       mod_setting_group_x_offset = 0
 
+      GuiText(gui, 0, 0, " ")
       ::continue::
     end
-    GuiLayoutEnd(gui)
   else
     GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
     GuiText(gui, 0, 0, "Rewards can only be configured in-game.")

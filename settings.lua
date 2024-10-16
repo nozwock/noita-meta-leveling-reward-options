@@ -322,13 +322,13 @@ function ModSettingsUpdate(init_scope)
               settings = settings,
               hidden = false
             }
-            ResetTextStrings(reward_settings[#reward_settings])
           end
         end
 
+        -- todo? Add an option to toggle b/w sort by name and id
         table.sort(reward_settings, function(a, b)
-          return GameTextGetTranslatedOrNot(a._text)
-              < GameTextGetTranslatedOrNot(b._text)
+          return GameTextGetTranslatedOrNot(a.id)
+              < GameTextGetTranslatedOrNot(b.id)
         end)
       end
 
@@ -414,7 +414,7 @@ function ModSettingsGui(gui, in_main_menu)
       end)
     end
 
-    if new_search_text ~= search_text then -- todo: use distance based matching
+    if new_search_text ~= search_text then -- todo? Use distance based matching
       search_text = new_search_text
       new_search_text = new_search_text:lower():gsub("%s+", " ")
       if new_search_text == "" then

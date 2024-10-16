@@ -279,7 +279,8 @@ function ModSettingsUpdate(init_scope)
                 if type(value) ~= "boolean" then value = setting.value_default or false end
 
                 local text = GameTextGet(value and "$option_on" or "$option_off")
-                local clicked, right_clicked = GuiButton(gui, im_id, 0, 0, text)
+                GuiOptionsAddForNextWidget(gui, GUI_OPTION.DrawActiveWidgetCursorOnBothSides)
+                local clicked, right_clicked = GuiButton(gui, im_id, mod_setting_group_x_offset, 0, text)
                 if clicked then
                   ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), not value, false)
                 end
@@ -302,7 +303,7 @@ function ModSettingsUpdate(init_scope)
                   value_precision = 2,
                   value_display_multiplier = 100,
                   value_display_formatting = " %d%%",
-                }, 48)
+                })
               end)
           end
           if #settings ~= 0 then
@@ -346,15 +347,7 @@ end
 -- Your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 -- If your mod changes the displayed settings dynamically, you might need to implement custom logic for this function.
 function ModSettingsGuiCount()
-  return 1 -- da fk?
-  -- local count = 0
-  -- for _, setting in ipairs(reward_settings) do
-  --   if not setting.hidden then
-  --     count = count + #setting.group
-  --   end
-  -- end
-  -- return count
-  -- return mod_settings_gui_count(MOD_ID, mod_settings)
+  return 1 -- no idea why I'm doing this, just copied it from 'Start With Any Perks'
 end
 
 local function IdFactory()
@@ -411,19 +404,20 @@ function ModSettingsGui(gui, in_main_menu)
     for _, reward_setting in ipairs(reward_settings) do
       if reward_setting.hidden then goto continue end
 
-      GuiLayoutBeginHorizontal(gui, 0, 0, true)
-
       local text = GameTextGetTranslatedOrNot(reward_setting.name_key)
       if text == "" then
         text = reward_setting.id
       end
       GuiText(gui, 0, 0, text)
 
+      GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
+      mod_setting_group_x_offset = 82
       for _, setting in ipairs(reward_setting.settings) do
+        mod_setting_group_x_offset = mod_setting_group_x_offset + 10
         setting.ui_fn(MOD_ID, gui, in_main_menu, id(), setting)
+        GuiLayoutAddHorizontalSpacing(gui, 4)
       end
-
-      GuiLayoutEnd(gui)
+      GuiOptionsRemove(gui, GUI_OPTION.Layout_NextSameLine)
 
       ::continue::
     end

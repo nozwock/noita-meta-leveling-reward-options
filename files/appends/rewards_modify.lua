@@ -12,15 +12,17 @@ for _, reward in ipairs(rewards_deck.reward_definition_list) do
           reward.mlro_state.probability
     end
   end
-  if type(reward.custom_check) ~= "function" then
-    reward.mlro_state.custom_check = true --- reward always available
-    reward.custom_check = function()
-      local enable = ModSettingGet(utils:ResolveModSettingId(const.reward_setting_prefix ..
-        reward.id .. const.reward_setting_suffix.enable))
-      if enable ~= nil then
-        return enable
-      end
-      return true
+  reward.mlro_state.custom_check = reward.custom_check or true --- reward always available
+  reward.custom_check = function()
+    local prev_enable = reward.mlro_state.custom_check ---@type function|boolean
+    if type(prev_enable) == "function" then
+      prev_enable = prev_enable()
     end
+    local enable = ModSettingGet(utils:ResolveModSettingId(const.reward_setting_prefix ..
+      reward.id .. const.reward_setting_suffix.enable))
+    if enable ~= nil then
+      return prev_enable and enable
+    end
+    return prev_enable
   end
 end

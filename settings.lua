@@ -278,7 +278,7 @@ function ModSettingsUpdate(init_scope)
           local settings = {} ---@type setting[]
           if reward.mlro_state.custom_check then
             AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.enable,
-              TYPE.boolean, reward.mlro_state.custom_check, function(mod_id, gui, in_main_menu, im_id, setting)
+              TYPE.boolean, true, function(mod_id, gui, in_main_menu, im_id, setting)
                 local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
                 if type(value) ~= "boolean" then value = setting.value_default or false end
 

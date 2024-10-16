@@ -383,7 +383,8 @@ function ModSettingsGui(gui, in_main_menu)
       else
         for _, reward_setting in ipairs(reward_settings) do
           local setting_name = reward_setting._text:lower():gsub("%s+", " ")
-          reward_setting.hidden = setting_name:find(new_search_text, 0, true) == nil
+          local setting_description = reward_setting._description:lower():gsub("%s+", " ")
+          reward_setting.hidden = not (setting_name:find(new_search_text, 0, true) ~= nil or setting_description:find(new_search_text, 0, true) ~= nil)
         end
       end
     end

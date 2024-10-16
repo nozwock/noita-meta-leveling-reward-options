@@ -370,6 +370,25 @@ local function IdFactory()
   end
 end
 
+---@param gui gui
+---@param id integer
+---@param x integer
+---@param y integer
+---@param icon string
+---@param alpha number
+---@param scale number
+function DrawRewardIcon(gui, id, x, y, icon, alpha, scale)
+  scale = scale or 1
+  if icon:find("%.xml") then
+    GuiImage(gui, id, x, y, icon, alpha, scale, 0, 0, GUI_RECT_ANIMATION_PLAYBACK.Loop)
+    return
+  end
+  local width, height = GuiGetImageDimensions(gui, icon, 1)
+  local x_offset = (16 - width) / 2 * scale
+  local y_offset = (16 - height) / 2 * scale
+  GuiImage(gui, id, x + x_offset, y + y_offset, icon, alpha, scale, 0, 0, GUI_RECT_ANIMATION_PLAYBACK.Loop)
+end
+
 local search_text = ""
 
 -- This function is called to display the settings UI for this mod. your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
@@ -419,7 +438,7 @@ function ModSettingsGui(gui, in_main_menu)
 
       GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
 
-      GuiImage(gui, id(), 0, 0, reward_setting.ui_icon, 1, 0.8, 0, 0, GUI_RECT_ANIMATION_PLAYBACK.Loop)
+      DrawRewardIcon(gui, id(), 0, 0, reward_setting.ui_icon, 1, 0.8)
 
       GuiText(gui, 18, 0, reward_setting._text)
       GuiTooltip(gui, reward_setting.id, reward_setting._description)

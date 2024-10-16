@@ -374,7 +374,7 @@ function ModSettingsGui(gui, in_main_menu)
   -- mod_settings_gui(MOD_ID, mod_settings, gui, in_main_menu)
   GuiIdPushString(gui, MOD_ID)
 
-  if not in_main_menu and RUNTIME_FLAG then
+  if not in_main_menu and RUNTIME_FLAG and INIT_FLAG then
     local id = IdFactory()
     GuiOptionsAdd(gui, GUI_OPTION.DrawActiveWidgetCursorOnBothSides)
     GuiLayoutBeginHorizontal(gui, 0, 0, true)

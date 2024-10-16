@@ -195,6 +195,7 @@ local rewards_deck = {}
 ---@field id string
 ---@field name_key string
 ---@field description reward_description
+---@field ui_icon string
 ---@field settings setting[]
 ---@field hidden boolean
 ---@field _text? string
@@ -317,6 +318,7 @@ function ModSettingsUpdate(init_scope)
                 key = reward.description,
                 var = reward.description_var
               },
+              ui_icon = reward.ui_icon,
               settings = settings,
               hidden = false
             }
@@ -416,7 +418,10 @@ function ModSettingsGui(gui, in_main_menu)
       GuiLayoutAddVerticalSpacing(gui, 1)
 
       GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
-      GuiText(gui, 0, 0, reward_setting._text)
+
+      GuiImage(gui, id(), 0, 0, reward_setting.ui_icon, 1, 0.8, 0, 0, GUI_RECT_ANIMATION_PLAYBACK.Loop)
+
+      GuiText(gui, 18, 0, reward_setting._text)
       GuiTooltip(gui, reward_setting.id, reward_setting._description)
 
       local offset = 10

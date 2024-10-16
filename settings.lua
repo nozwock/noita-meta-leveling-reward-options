@@ -174,11 +174,18 @@ local rewards_deck = {}
 ---@field value_default any
 ---@field ui_fn function
 
+---@class reward_description
+---@field key? string
+---@field var? string
+
 ---@class reward_setting
 ---@field id string
 ---@field name_key string
+---@field description reward_description
 ---@field settings setting[]
 ---@field hidden boolean
+---@field _text? string
+---@field _description? string
 
 ---@type reward_setting[]
 local reward_settings = {}
@@ -280,6 +287,10 @@ function ModSettingsUpdate(init_scope)
             reward_settings[#reward_settings + 1] = {
               id = reward.id,
               name_key = reward.ui_name,
+              description = {
+                key = reward.description,
+                var = reward.description_var
+              },
               settings = settings,
               hidden = false
             }
@@ -295,13 +306,25 @@ function ModSettingsUpdate(init_scope)
       INIT_FLAG = true
     end
 
-    ForEachSetting(reward_settings, function(setting)
-      local id = utils:ResolveModSettingId(setting.id)
-      local next_value = ModSettingGetNextValue(id)
-      if next_value ~= nil then
-        ModSettingSet(id, next_value)
+    for _, reward_setting in ipairs(reward_settings) do
+      -- Resetting cached translations
+      local reward_name = GameTextGetTranslatedOrNot(reward_setting.name_key)
+      if reward_name ~= "" then
+        reward_setting._text = reward_name
+      else
+        reward_setting._text = reward_setting.id
       end
-    end)
+      reward_setting._description = rewards_deck:UnpackDescription(reward_setting.description.key,
+        reward_setting.description.var) or ""
+
+      for _, setting in ipairs(reward_setting.settings) do
+        local id = utils:ResolveModSettingId(setting.id)
+        local next_value = ModSettingGetNextValue(id)
+        if next_value ~= nil then
+          ModSettingSet(id, next_value)
+        end
+      end
+    end
 
     RUNTIME_FLAG = true
   else
@@ -359,7 +382,7 @@ function ModSettingsGui(gui, in_main_menu)
         for _, reward_setting in ipairs(reward_settings) do reward_setting.hidden = false end
       else
         for _, reward_setting in ipairs(reward_settings) do
-          local setting_name = GameTextGetTranslatedOrNot(reward_setting.name_key):lower():gsub("%s+", " ")
+          local setting_name = reward_setting._text:lower():gsub("%s+", " ")
           reward_setting.hidden = setting_name:find(new_search_text, 0, true) == nil
         end
       end
@@ -373,14 +396,9 @@ function ModSettingsGui(gui, in_main_menu)
 
       GuiLayoutAddVerticalSpacing(gui, 1)
 
-      local text = GameTextGetTranslatedOrNot(reward_setting.name_key)
-      if text == "" then
-        text = reward_setting.id
-      end
-
       GuiOptionsAdd(gui, GUI_OPTION.Layout_NextSameLine)
-      GuiText(gui, 0, 0, text)
-      GuiTooltip(gui, reward_setting.id, "")
+      GuiText(gui, 0, 0, reward_setting._text)
+      GuiTooltip(gui, reward_setting.id, reward_setting._description)
 
       local offset = 10
       mod_setting_group_x_offset = 150

@@ -48,51 +48,6 @@ function utils:FloorSliderValueFloat(number, decimal)
   return self:TruncateNumber(number + 5 / pow, decimal)
 end
 
----Both `enum_values` and `info` must have the same size and keys of `info` should be the values in `enum_values`.
----The values in the `info` table must have two items, the option name and its tooltip.
----
----**NOTE:** Order of `enum_values` must be consistent, so don't derive it using `pairs` over a `table`.
----@param enum_values integer[]|string[]
----@param info table
-local function CreateGuiSettingEnum(enum_values, info)
-  return function(mod_id, gui, in_main_menu, im_id, setting)
-    local setting_id = mod_setting_get_id(mod_id, setting)
-    local prev_value = ModSettingGetNextValue(setting_id) or setting.value_default
-
-    GuiLayoutBeginHorizontal(gui, mod_setting_group_x_offset, 0, true)
-
-    local value = nil
-
-    if info[prev_value] == nil then
-      prev_value = setting.value_default
-    end
-
-    if GuiButton(gui, im_id, 0, 0, setting.ui_name .. ": " .. info[prev_value][1]) then
-      for i, v in ipairs(enum_values) do
-        if prev_value == v then
-          value = enum_values[i % #enum_values + 1]
-          break
-        end
-      end
-    end
-    local right_clicked, hovered = select(2, GuiGetPreviousWidgetInfo(gui))
-    if right_clicked then
-      value = setting.value_default
-      GamePlaySound("data/audio/Desktop/ui.bank", "ui/button_click", 0, 0)
-    end
-    if hovered then
-      GuiTooltip(gui, info[prev_value][2], "")
-    end
-
-    GuiLayoutEnd(gui)
-
-    if value ~= nil then
-      ModSettingSetNextValue(setting_id, value, false)
-      mod_setting_handle_change_callback(mod_id, gui, in_main_menu, setting, prev_value, value)
-    end
-  end
-end
-
 ---@param gui gui
 local function GetPreviousWidget(gui)
   local clicked, right_clicked, hovered, x, y, width, height =

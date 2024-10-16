@@ -201,6 +201,7 @@ local TYPE = {
 }
 
 local INIT_FLAG = false
+local META_LEVELING_ENABLED = false
 local RUNTIME_FLAG = false
 local rewards_deck = {}
 
@@ -294,8 +295,12 @@ function ModSettingsUpdate(init_scope)
 
   if init_scope >= MOD_SETTING_SCOPE_RUNTIME and ModIsEnabled(MOD_ID) then
     if not INIT_FLAG then
+      local reward_list
+      if not ModIsEnabled("meta_leveling") then goto skip_init end
+      META_LEVELING_ENABLED = true
+
       RewardsInit()
-      local reward_list = GetRewardsList()
+      reward_list = GetRewardsList()
       if ValidateRewardsList(reward_list) then
         for _, reward in ipairs(reward_list) do
           local settings = {} ---@type setting[]
@@ -354,6 +359,8 @@ function ModSettingsUpdate(init_scope)
               < GameTextGetTranslatedOrNot(b.id)
         end)
       end
+
+      ::skip_init::
 
       INIT_FLAG = true
     end
@@ -416,10 +423,16 @@ local search_text = ""
 
 -- This function is called to display the settings UI for this mod. your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 function ModSettingsGui(gui, in_main_menu)
-  GuiIdPushString(gui, MOD_ID)
-
   if not in_main_menu and RUNTIME_FLAG and INIT_FLAG then
+    if not META_LEVELING_ENABLED then
+      GuiColorSetForNextWidget(gui, 1, 0.5, 0.5, 0.8)
+      GuiText(gui, 0, 0, "This requires the Meta Leveling mod to be enabled.")
+      return
+    end
+
+    GuiIdPushString(gui, MOD_ID)
     local id = IdFactory()
+
     GuiOptionsAdd(gui, GUI_OPTION.DrawActiveWidgetCursorOnBothSides)
     GuiLayoutBeginHorizontal(gui, 0, 0, true)
     local clicked_clear_search = GuiButton(gui, id(), 0, 0, "Clear search")
@@ -478,12 +491,13 @@ function ModSettingsGui(gui, in_main_menu)
       mod_setting_group_x_offset = 0
 
       GuiText(gui, 0, 0, " ")
+
       ::continue::
     end
+
+    GuiIdPop(gui)
   else
     GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
     GuiText(gui, 0, 0, "Rewards can only be configured in-game.")
   end
-
-  GuiIdPop(gui)
 end

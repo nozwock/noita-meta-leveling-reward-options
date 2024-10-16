@@ -198,7 +198,7 @@ function ForEachSetting(reward_settings, fn)
   end
 end
 
--- todo error handling for when meta leveling isn't enabled
+-- todo: error handling for when meta leveling isn't enabled
 local function RewardsInit()
   rewards_deck = dofile_once("mods/meta_leveling/files/scripts/classes/private/rewards_deck.lua")
   rewards_deck:GatherData()
@@ -220,12 +220,12 @@ end
 ---@param value_default any
 ---@param ui_fn function
 local function AddToSettings(settings, id, type, value_default, ui_fn)
-  table.insert(settings, {
+  settings[#settings + 1] = {
     id = id,
     type = type,
     value_default = value_default,
     ui_fn = ui_fn
-  })
+  }
   ModSettingSetNextValue(utils:ResolveModSettingId(id), value_default, true) -- set default
 end
 
@@ -277,12 +277,12 @@ function ModSettingsUpdate(init_scope)
               end)
           end
           if #settings ~= 0 then
-            table.insert(reward_settings, {
+            reward_settings[#reward_settings + 1] = {
               id = reward.id,
               name_key = reward.ui_name,
               settings = settings,
               hidden = false
-            })
+            }
           end
         end
 
@@ -352,7 +352,7 @@ function ModSettingsGui(gui, in_main_menu)
       end)
     end
 
-    if new_search_text ~= search_text then
+    if new_search_text ~= search_text then -- todo: use distance based matching
       search_text = new_search_text
       new_search_text = new_search_text:lower():gsub("%s+", " ")
       if new_search_text == "" then

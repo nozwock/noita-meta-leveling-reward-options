@@ -208,12 +208,6 @@ local function GetRewardsList()
   return rewards_deck.reward_definition_list
 end
 
---- Lazy check, checking for only the first item.
----@param list table
-local function ValidateRewardsList(list)
-  return list[1] and list[1].mlro_state ~= nil
-end
-
 ---@param settings setting[]
 ---@param id string
 ---@param type integer
@@ -250,70 +244,70 @@ function ModSettingsUpdate(init_scope)
 
   if init_scope >= MOD_SETTING_SCOPE_RUNTIME and ModIsEnabled(MOD_ID) then
     if not INIT_FLAG then
-      local reward_list
       if not ModIsEnabled("meta_leveling") then goto skip_init end
       META_LEVELING_ENABLED = true
 
       RewardsInit()
-      reward_list = GetRewardsList()
-      if ValidateRewardsList(reward_list) then
-        for _, reward in ipairs(reward_list) do
-          local settings = {} ---@type setting[]
-          if reward.mlro_state.custom_check then
-            AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.enable,
-              TYPE.boolean, true, function(mod_id, gui, in_main_menu, im_id, setting)
-                local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
-                if type(value) ~= "boolean" then value = setting.value_default or false end
+      for _, reward in ipairs(GetRewardsList()) do
+        if reward.mlro_state == nil then goto continue end
 
-                local text = GameTextGet(value and "$option_on" or "$option_off")
-                GuiOptionsAddForNextWidget(gui, GUI_OPTION.DrawActiveWidgetCursorOnBothSides)
-                local clicked, right_clicked = GuiButton(gui, im_id, mod_setting_group_x_offset, 0, text)
-                if clicked then
-                  ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), not value, false)
-                end
-                if right_clicked then
-                  local new_value = setting.value_default or false
-                  ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), new_value, false)
-                end
+        local settings = {} ---@type setting[]
+        if reward.mlro_state.custom_check then
+          AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.enable,
+            TYPE.boolean, true, function(mod_id, gui, in_main_menu, im_id, setting)
+              local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
+              if type(value) ~= "boolean" then value = setting.value_default or false end
 
-                mod_setting_tooltip(mod_id, gui, in_main_menu, setting)
-              end)
-          end
-          if reward.mlro_state.probability then
-            AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.probability,
-              TYPE.number, reward.mlro_state.probability, function(mod_id, gui, in_main_menu, im_id, setting)
-                mod_setting_float(mod_id, gui, in_main_menu, im_id, {
-                  id = setting.id,
-                  value_default = setting.value_default,
-                  value_min = 0,
-                  value_max = 1,
-                  value_precision = 2,
-                  value_display_multiplier = 100,
-                  value_display_formatting = " %d%%",
-                })
-              end)
-          end
-          if #settings ~= 0 then
-            reward_settings[#reward_settings + 1] = {
-              id = reward.id,
-              name_key = reward.ui_name,
-              description = {
-                key = reward.description,
-                var = reward.description_var
-              },
-              ui_icon = reward.ui_icon,
-              settings = settings,
-              hidden = false
-            }
-          end
+              local text = GameTextGet(value and "$option_on" or "$option_off")
+              GuiOptionsAddForNextWidget(gui, GUI_OPTION.DrawActiveWidgetCursorOnBothSides)
+              local clicked, right_clicked = GuiButton(gui, im_id, mod_setting_group_x_offset, 0, text)
+              if clicked then
+                ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), not value, false)
+              end
+              if right_clicked then
+                local new_value = setting.value_default or false
+                ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), new_value, false)
+              end
+
+              mod_setting_tooltip(mod_id, gui, in_main_menu, setting)
+            end)
+        end
+        if reward.mlro_state.probability then
+          AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.probability,
+            TYPE.number, reward.mlro_state.probability, function(mod_id, gui, in_main_menu, im_id, setting)
+              mod_setting_float(mod_id, gui, in_main_menu, im_id, {
+                id = setting.id,
+                value_default = setting.value_default,
+                value_min = 0,
+                value_max = 1,
+                value_precision = 2,
+                value_display_multiplier = 100,
+                value_display_formatting = " %d%%",
+              })
+            end)
+        end
+        if #settings ~= 0 then
+          reward_settings[#reward_settings + 1] = {
+            id = reward.id,
+            name_key = reward.ui_name,
+            description = {
+              key = reward.description,
+              var = reward.description_var
+            },
+            ui_icon = reward.ui_icon,
+            settings = settings,
+            hidden = false
+          }
         end
 
-        -- todo? Add an option to toggle b/w sort by name and id
-        table.sort(reward_settings, function(a, b)
-          return GameTextGetTranslatedOrNot(a.id)
-              < GameTextGetTranslatedOrNot(b.id)
-        end)
+        ::continue::
       end
+
+      -- todo? Add an option to toggle b/w sort by name and id
+      table.sort(reward_settings, function(a, b)
+        return GameTextGetTranslatedOrNot(a.id)
+            < GameTextGetTranslatedOrNot(b.id)
+      end)
 
       ::skip_init::
 

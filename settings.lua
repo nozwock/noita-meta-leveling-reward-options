@@ -155,8 +155,14 @@ local TYPE = {
   ["nil"] = 5
 }
 
+local ML_FLAG = {
+  ENABLED = 1,
+  DISABLED = 2,
+  INIT_FAIL = 3
+}
+
 local INIT_FLAG = false
-local META_LEVELING_ENABLED = false
+local META_LEVELING = { flag = ML_FLAG.DISABLED }
 local RUNTIME_FLAG = false
 local rewards_deck = {}
 
@@ -245,9 +251,16 @@ function ModSettingsUpdate(init_scope)
   if init_scope >= MOD_SETTING_SCOPE_RUNTIME and ModIsEnabled(MOD_ID) then
     if not INIT_FLAG then
       if not ModIsEnabled("meta_leveling") then goto skip_init end
-      META_LEVELING_ENABLED = true
+      META_LEVELING = { flag = ML_FLAG.ENABLED }
 
-      RewardsInit()
+      do
+        local ok, result = pcall(RewardsInit)
+        if not ok then
+          META_LEVELING = { flag = ML_FLAG.INIT_FAIL, extra = result}
+          goto skip_init
+        end
+      end
+
       for _, reward in ipairs(GetRewardsList()) do
         if reward.mlro_state == nil then goto continue end
 
@@ -370,10 +383,45 @@ end
 
 local search_text = ""
 
+---@param text string
+---@return string
+function WrapText(text)
+  text = text:gsub("\r+", ""):gsub("\n\n+", "\n")
+
+  local words = {}
+  for word in string.gmatch(text, "[^%s]+%s*") do
+      table.insert(words, word)
+  end
+
+  local wrapped_text = unpack(words, 1, 1)
+  local char_count = string.len(wrapped_text)
+  for _, word in pairs({ unpack(words, 2) }) do
+      char_count = char_count + string.len(word)
+      if char_count > 80 then
+          wrapped_text = string.gsub(wrapped_text, "%s+$", "") .. "\n"
+          char_count = string.len(word)
+      end
+      wrapped_text = wrapped_text .. word
+  end
+
+  return wrapped_text
+end
+
 -- This function is called to display the settings UI for this mod. your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 function ModSettingsGui(gui, in_main_menu)
+  if META_LEVELING.flag == ML_FLAG.INIT_FAIL then
+      GuiColorSetForNextWidget(gui, 1, 0.5, 0.5, 0.8)
+      GuiText(gui, 0, 0, WrapText("Some error occurred while patching Meta Leveling; either it's due to a bug on the Meta Leveling side, or this mod's logic needs to be updated."))
+      GuiText(gui, 0, 0, " ")
+      GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
+      GuiText(gui, 0, 0, "Detailed error report:\n--------------")
+      GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
+      GuiText(gui, 0, 0, WrapText(META_LEVELING.extra))
+    return
+  end
+
   if not in_main_menu and RUNTIME_FLAG and INIT_FLAG then
-    if not META_LEVELING_ENABLED then
+    if META_LEVELING.flag == ML_FLAG.DISABLED then
       GuiColorSetForNextWidget(gui, 1, 0.5, 0.5, 0.8)
       GuiText(gui, 0, 0, "This requires the Meta Leveling mod to be enabled.")
       return

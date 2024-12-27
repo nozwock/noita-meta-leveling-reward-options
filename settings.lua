@@ -6,9 +6,7 @@ local MOD_ID = "meta-leveling-reward-options" -- This should match the name of y
 local utils = {}
 
 ---@param id string
-function utils:ResolveModSettingId(id)
-  return MOD_ID .. "." .. id
-end
+function utils:ResolveModSettingId(id) return MOD_ID .. "." .. id end
 
 --- Returns translated text from $string
 --- @param string string should be in $string format
@@ -26,9 +24,7 @@ end
 ---@param number number
 ---@param decimal? integer
 function utils:TruncateNumber(number, decimal)
-  if decimal <= 0 then
-    decimal = nil
-  end
+  if decimal <= 0 then decimal = nil end
   local pow = 10 ^ (decimal or 0)
   return math.floor(number * pow) / pow
 end
@@ -41,17 +37,14 @@ end
 ---@param number number
 ---@param decimal? integer
 function utils:FloorSliderValueFloat(number, decimal)
-  if decimal <= 0 or not decimal then
-    decimal = 0
-  end
+  if decimal <= 0 or not decimal then decimal = 0 end
   local pow = 10 ^ (decimal + 1)
   return self:TruncateNumber(number + 5 / pow, decimal)
 end
 
 ---@param gui gui
 local function GetPreviousWidget(gui)
-  local clicked, right_clicked, hovered, x, y, width, height =
-      GuiGetPreviousWidgetInfo(gui)
+  local clicked, right_clicked, hovered, x, y, width, height = GuiGetPreviousWidgetInfo(gui)
   ---@class widget_info
   ---@field clicked boolean
   ---@field right_clicked  boolean
@@ -67,10 +60,9 @@ local function GetPreviousWidget(gui)
     x = x,
     y = y,
     width = width,
-    height = height
+    height = height,
   }
 end
-
 
 ---@param mod_id string
 ---@param gui gui
@@ -81,8 +73,17 @@ end
 ---@param value_display_multiplier? number
 ---@param value_map? fun(value:number):number
 ---@param width? integer
-local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value_formatting, value_display_multiplier,
-                                value_map, width)
+local function ModSettingSlider(
+  mod_id,
+  gui,
+  in_main_menu,
+  im_id,
+  setting,
+  value_formatting,
+  value_display_multiplier,
+  value_map,
+  width
+)
   local empty = "data/ui_gfx/empty.png"
   local setting_id = mod_setting_get_id(mod_id, setting)
   local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
@@ -90,8 +91,12 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
   setting.ui_name = setting.ui_name or ""
 
   if setting.value_min == nil or setting.value_max == nil or setting.value_default == nil then
-    GuiText(gui, mod_setting_group_x_offset, 0,
-      setting.ui_name .. " - not all required values are defined in setting definition")
+    GuiText(
+      gui,
+      mod_setting_group_x_offset,
+      0,
+      setting.ui_name .. " - not all required values are defined in setting definition"
+    )
     return
   end
 
@@ -101,12 +106,21 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
   GuiIdPushString(gui, MOD_ID .. setting_id)
 
   width = width or 64
-  local value_new = GuiSlider(gui, im_id, mod_setting_group_x_offset, 0, setting.ui_name, value, setting.value_min,
-    setting.value_max, setting.value_default, setting.value_slider_multiplier or 1, -- This affects the steps for slider aswell, so it's not just a visual thing.
-    " ", width)
-  if value_map then
-    value_new = value_map(value_new)
-  end
+  local value_new = GuiSlider(
+    gui,
+    im_id,
+    mod_setting_group_x_offset,
+    0,
+    setting.ui_name,
+    value,
+    setting.value_min,
+    setting.value_max,
+    setting.value_default,
+    setting.value_slider_multiplier or 1, -- This affects the steps for slider aswell, so it's not just a visual thing.
+    " ",
+    width
+  )
+  if value_map then value_new = value_map(value_new) end
 
   local slider_info = GetPreviousWidget(gui)
   local display_text = string.format(value_formatting, value_new * (value_display_multiplier or 1))
@@ -117,8 +131,17 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
   GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
   GuiText(gui, mod_setting_group_x_offset + width + 4, 0, display_text) -- note: xy values from GetPrevious are on global coordinates system
 
-  GuiImageNinePiece(gui, im_id + 2, start.x, start.y, slider_info.x - start.x + slider_info.width + tw - 2,
-    slider_info.height, 0, empty, empty)
+  GuiImageNinePiece(
+    gui,
+    im_id + 2,
+    start.x,
+    start.y,
+    slider_info.x - start.x + slider_info.width + tw - 2,
+    slider_info.height,
+    0,
+    empty,
+    empty
+  )
 
   GuiIdPop(gui)
 
@@ -129,19 +152,32 @@ local function ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, value
 end
 
 local function mod_setting_integer(mod_id, gui, in_main_menu, im_id, setting, width)
-  ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, setting.value_display_formatting or "%d",
-    setting.value_display_multiplier, function(value)
-      return utils:FloorSliderValueInteger(value)
-    end, width)
+  ModSettingSlider(
+    mod_id,
+    gui,
+    in_main_menu,
+    im_id,
+    setting,
+    setting.value_display_formatting or "%d",
+    setting.value_display_multiplier,
+    function(value) return utils:FloorSliderValueInteger(value) end,
+    width
+  )
 end
 
 local function mod_setting_float(mod_id, gui, in_main_menu, im_id, setting, width)
-  ModSettingSlider(mod_id, gui, in_main_menu, im_id, setting, setting.value_display_formatting or "%.1f",
-    setting.value_display_multiplier, function(value)
-      return utils:FloorSliderValueFloat(value, setting.value_precision)
-    end, width)
+  ModSettingSlider(
+    mod_id,
+    gui,
+    in_main_menu,
+    im_id,
+    setting,
+    setting.value_display_formatting or "%.1f",
+    setting.value_display_multiplier,
+    function(value) return utils:FloorSliderValueFloat(value, setting.value_precision) end,
+    width
+  )
 end
-
 
 -- This is a magic global that can be used to migrate settings to new mod versions.
 -- Call mod_settings_get_version() before mod_settings_update() to get the old value.
@@ -152,13 +188,13 @@ local TYPE = {
   string = 2,
   number = 3,
   table = 4,
-  ["nil"] = 5
+  ["nil"] = 5,
 }
 
 local ML_FLAG = {
   ENABLED = 1,
   DISABLED = 2,
-  INIT_FAIL = 3
+  INIT_FAIL = 3,
 }
 
 local INIT_FLAG = false
@@ -191,7 +227,7 @@ local reward_settings = {}
 local reward_setting_prefix = "reward_"
 local reward_setting_suffix = {
   probability = "_probability",
-  enable = "_enable"
+  enable = "_enable",
 }
 
 ---@param reward_settings reward_setting[]
@@ -210,9 +246,7 @@ local function RewardsInit()
   rewards_deck:GatherData()
 end
 
-local function GetRewardsList()
-  return rewards_deck.reward_definition_list
-end
+local function GetRewardsList() return rewards_deck.reward_definition_list end
 
 ---@param settings setting[]
 ---@param id string
@@ -224,7 +258,7 @@ local function AddToSettings(settings, id, type, value_default, ui_fn)
     id = id,
     type = type,
     value_default = value_default,
-    ui_fn = ui_fn
+    ui_fn = ui_fn,
   }
   ModSettingSetNextValue(utils:ResolveModSettingId(id), value_default, true) -- set default
 end
@@ -238,8 +272,10 @@ local function ResetTextStrings(reward_setting)
   else
     reward_setting._text = reward_setting.id
   end
-  reward_setting._description = rewards_deck:UnpackDescription(reward_setting.description.key,
-    reward_setting.description.var) or ""
+  reward_setting._description = rewards_deck:UnpackDescription(
+    reward_setting.description.key,
+    reward_setting.description.var
+  ) or ""
 end
 
 -- This function is called to ensure the correct setting values are visible to the game. your mod's settings don't work if you don't have a function like this defined in settings.lua.
@@ -256,7 +292,7 @@ function ModSettingsUpdate(init_scope)
       do
         local ok, result = pcall(RewardsInit)
         if not ok then
-          META_LEVELING = { flag = ML_FLAG.INIT_FAIL, extra = result}
+          META_LEVELING = { flag = ML_FLAG.INIT_FAIL, extra = result }
           goto skip_init
         end
       end
@@ -266,28 +302,35 @@ function ModSettingsUpdate(init_scope)
 
         local settings = {} ---@type setting[]
         if reward.mlro_state.custom_check then
-          AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.enable,
-            TYPE.boolean, true, function(mod_id, gui, in_main_menu, im_id, setting)
+          AddToSettings(
+            settings,
+            reward_setting_prefix .. reward.id .. reward_setting_suffix.enable,
+            TYPE.boolean,
+            true,
+            function(mod_id, gui, in_main_menu, im_id, setting)
               local value = ModSettingGetNextValue(mod_setting_get_id(mod_id, setting))
               if type(value) ~= "boolean" then value = setting.value_default or false end
 
               local text = GameTextGet(value and "$option_on" or "$option_off")
               GuiOptionsAddForNextWidget(gui, GUI_OPTION.DrawActiveWidgetCursorOnBothSides)
               local clicked, right_clicked = GuiButton(gui, im_id, mod_setting_group_x_offset, 0, text)
-              if clicked then
-                ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), not value, false)
-              end
+              if clicked then ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), not value, false) end
               if right_clicked then
                 local new_value = setting.value_default or false
                 ModSettingSetNextValue(mod_setting_get_id(mod_id, setting), new_value, false)
               end
 
               mod_setting_tooltip(mod_id, gui, in_main_menu, setting)
-            end)
+            end
+          )
         end
         if reward.mlro_state.probability then
-          AddToSettings(settings, reward_setting_prefix .. reward.id .. reward_setting_suffix.probability,
-            TYPE.number, reward.mlro_state.probability, function(mod_id, gui, in_main_menu, im_id, setting)
+          AddToSettings(
+            settings,
+            reward_setting_prefix .. reward.id .. reward_setting_suffix.probability,
+            TYPE.number,
+            reward.mlro_state.probability,
+            function(mod_id, gui, in_main_menu, im_id, setting)
               mod_setting_float(mod_id, gui, in_main_menu, im_id, {
                 id = setting.id,
                 value_default = setting.value_default,
@@ -297,7 +340,8 @@ function ModSettingsUpdate(init_scope)
                 value_display_multiplier = 100,
                 value_display_formatting = " %d%%",
               })
-            end)
+            end
+          )
         end
         if #settings ~= 0 then
           reward_settings[#reward_settings + 1] = {
@@ -305,11 +349,11 @@ function ModSettingsUpdate(init_scope)
             name_key = reward.ui_name,
             description = {
               key = reward.description,
-              var = reward.description_var
+              var = reward.description_var,
             },
             ui_icon = reward.ui_icon,
             settings = settings,
-            hidden = false
+            hidden = false,
           }
         end
 
@@ -317,10 +361,10 @@ function ModSettingsUpdate(init_scope)
       end
 
       -- todo? Add an option to toggle b/w sort by name and id
-      table.sort(reward_settings, function(a, b)
-        return GameTextGetTranslatedOrNot(a.id)
-            < GameTextGetTranslatedOrNot(b.id)
-      end)
+      table.sort(
+        reward_settings,
+        function(a, b) return GameTextGetTranslatedOrNot(a.id) < GameTextGetTranslatedOrNot(b.id) end
+      )
 
       ::skip_init::
 
@@ -332,9 +376,7 @@ function ModSettingsUpdate(init_scope)
       for _, setting in ipairs(reward_setting.settings) do
         local id = utils:ResolveModSettingId(setting.id)
         local next_value = ModSettingGetNextValue(id)
-        if next_value ~= nil then
-          ModSettingSet(id, next_value)
-        end
+        if next_value ~= nil then ModSettingSet(id, next_value) end
       end
     end
 
@@ -390,18 +432,18 @@ function WrapText(text)
 
   local words = {}
   for word in string.gmatch(text, "[^%s]+%s*") do
-      table.insert(words, word)
+    table.insert(words, word)
   end
 
   local wrapped_text = unpack(words, 1, 1)
   local char_count = string.len(wrapped_text)
   for _, word in pairs({ unpack(words, 2) }) do
-      char_count = char_count + string.len(word)
-      if char_count > 80 then
-          wrapped_text = string.gsub(wrapped_text, "%s+$", "") .. "\n"
-          char_count = string.len(word)
-      end
-      wrapped_text = wrapped_text .. word
+    char_count = char_count + string.len(word)
+    if char_count > 80 then
+      wrapped_text = string.gsub(wrapped_text, "%s+$", "") .. "\n"
+      char_count = string.len(word)
+    end
+    wrapped_text = wrapped_text .. word
   end
 
   return wrapped_text
@@ -410,13 +452,20 @@ end
 -- This function is called to display the settings UI for this mod. your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 function ModSettingsGui(gui, in_main_menu)
   if META_LEVELING.flag == ML_FLAG.INIT_FAIL then
-      GuiColorSetForNextWidget(gui, 1, 0.5, 0.5, 0.8)
-      GuiText(gui, 0, 0, WrapText("Some error occurred while patching Meta Leveling; either it's due to a bug on the Meta Leveling side, or this mod's logic needs to be updated."))
-      GuiText(gui, 0, 0, " ")
-      GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
-      GuiText(gui, 0, 0, "Detailed error report:\n--------------")
-      GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
-      GuiText(gui, 0, 0, WrapText(META_LEVELING.extra))
+    GuiColorSetForNextWidget(gui, 1, 0.5, 0.5, 0.8)
+    GuiText(
+      gui,
+      0,
+      0,
+      WrapText(
+        "Some error occurred while patching Meta Leveling; either it's due to a bug on the Meta Leveling side, or this mod's logic needs to be updated."
+      )
+    )
+    GuiText(gui, 0, 0, " ")
+    GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
+    GuiText(gui, 0, 0, "Detailed error report:\n--------------")
+    GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
+    GuiText(gui, 0, 0, WrapText(META_LEVELING.extra))
     return
   end
 
@@ -442,21 +491,27 @@ function ModSettingsGui(gui, in_main_menu)
     if clicked_clear_search then
       new_search_text = ""
     elseif clicked_reset then
-      ForEachSetting(reward_settings, function(setting)
-        ModSettingSetNextValue(utils:ResolveModSettingId(setting.id), setting.value_default, false)
-      end)
+      ForEachSetting(
+        reward_settings,
+        function(setting) ModSettingSetNextValue(utils:ResolveModSettingId(setting.id), setting.value_default, false) end
+      )
     end
 
     if new_search_text ~= search_text then -- todo? Use distance based matching
       search_text = new_search_text
       new_search_text = new_search_text:lower():gsub("%s+", " ")
       if new_search_text == "" then
-        for _, reward_setting in ipairs(reward_settings) do reward_setting.hidden = false end
+        for _, reward_setting in ipairs(reward_settings) do
+          reward_setting.hidden = false
+        end
       else
         for _, reward_setting in ipairs(reward_settings) do
           local setting_name = reward_setting._text:lower():gsub("%s+", " ")
           local setting_description = reward_setting._description:lower():gsub("%s+", " ")
-          reward_setting.hidden = not (setting_name:find(new_search_text, 0, true) ~= nil or setting_description:find(new_search_text, 0, true) ~= nil)
+          reward_setting.hidden = not (
+            setting_name:find(new_search_text, 0, true) ~= nil
+            or setting_description:find(new_search_text, 0, true) ~= nil
+          )
         end
       end
     end
@@ -478,7 +533,10 @@ function ModSettingsGui(gui, in_main_menu)
       local offset = 10
       mod_setting_group_x_offset = 150
       for _, setting in ipairs(reward_setting.settings) do
-        if #reward_setting.settings == 1 and reward_setting.settings[1].id:find(reward_setting_suffix.probability .. "$", 0) ~= nil then -- don't think about it, and give up the thought of doing nolla gui while you still can.
+        if
+          #reward_setting.settings == 1
+          and reward_setting.settings[1].id:find(reward_setting_suffix.probability .. "$", 0) ~= nil
+        then -- don't think about it, and give up the thought of doing nolla gui while you still can.
           mod_setting_group_x_offset = mod_setting_group_x_offset + offset + 10
         end
         setting.ui_fn(MOD_ID, gui, in_main_menu, id(), setting)

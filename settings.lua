@@ -434,29 +434,37 @@ local function NewTextWrapper(wrap_at_char, cache_size)
       max_size = (cache_size or 20) > 1 and cache_size or 20,
       -- LFU cache, not a great one at that.
       _cache = {},
-      __index = function(t, k)
-        t._cache[k].access_count = t._cache[k].access_count + 1
-        return t._cache[k].value
-      end,
-      __newindex = function(t, k, v)
-        if #t._cache > t.max_size then
-          local least_accessed = nil
-          for k_, v_ in pairs(t._cache) do
-            if not least_accessed then
-              least_accessed = { k_, v_.access_count }
-            else
-              least_accessed = v_.access_count < least_accessed[2] and { k_, v_.access_count } or least_accessed
-            end
-          end
-
-          -- Evict item
-          if least_accessed then t._cache[least_accessed[1]] = nil end
-        end
-
-        t._cache[k] = { value = v, access_count = 0 }
-      end,
     },
   }
+
+  setmetatable(obj.cache, {
+    __index = function(t, k)
+      local cached_item = t._cache[k]
+      if cached_item then
+        cached_item.access_count = cached_item.access_count + 1
+        return cached_item.value
+      else
+        return nil
+      end
+    end,
+    __newindex = function(t, k, v)
+      if #t._cache > t.max_size then
+        local least_accessed = nil
+        for k_, v_ in pairs(t._cache) do
+          if not least_accessed then
+            least_accessed = { k_, v_.access_count }
+          else
+            least_accessed = v_.access_count < least_accessed[2] and { k_, v_.access_count } or least_accessed
+          end
+        end
+
+        -- Evict item
+        if least_accessed then t._cache[least_accessed[1]] = nil end
+      end
+
+      t._cache[k] = { value = v, access_count = 0 }
+    end,
+  })
 
   --- Don't use cache for text that'll be too dynamic.
   ---@param text string

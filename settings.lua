@@ -423,31 +423,81 @@ function DrawRewardIcon(gui, id, x, y, icon, alpha, scale)
   GuiImage(gui, id, x + x_offset, y + y_offset, icon, alpha, scale, 0, 0, GUI_RECT_ANIMATION_PLAYBACK.Loop)
 end
 
-local search_text = ""
+---@param wrap_at_char? integer
+---@param cache_size? integer
+local function NewTextWrapper(wrap_at_char, cache_size)
+  --- Makeshift text wrapper.
+  ---@class TextWrapper
+  local obj = {
+    wrap_at_char = wrap_at_char or 80,
+    cache = {
+      max_size = (cache_size or 20) > 1 and cache_size or 20,
+      -- LFU cache, not a great one at that.
+      _cache = {},
+      __index = function(t, k)
+        t._cache[k].access_count = t._cache[k].access_count + 1
+        return t._cache[k].value
+      end,
+      __newindex = function(t, k, v)
+        if #t._cache > t.max_size then
+          local least_accessed = nil
+          for k_, v_ in pairs(t._cache) do
+            if not least_accessed then
+              least_accessed = { k_, v_.access_count }
+            else
+              least_accessed = v_.access_count < least_accessed[2] and { k_, v_.access_count } or least_accessed
+            end
+          end
 
----@param text string
----@return string
-function WrapText(text)
-  text = text:gsub("\r+", ""):gsub("\n\n+", "\n")
+          -- Evict item
+          if least_accessed then t._cache[least_accessed[1]] = nil end
+        end
 
-  local words = {}
-  for word in string.gmatch(text, "[^%s]+%s*") do
-    table.insert(words, word)
-  end
+        t._cache[k] = { value = v, access_count = 0 }
+      end,
+    },
+  }
 
-  local wrapped_text = unpack(words, 1, 1)
-  local char_count = string.len(wrapped_text)
-  for _, word in pairs({ unpack(words, 2) }) do
-    char_count = char_count + string.len(word)
-    if char_count > 80 then
-      wrapped_text = string.gsub(wrapped_text, "%s+$", "") .. "\n"
-      char_count = string.len(word)
+  --- Don't use cache for text that'll be too dynamic.
+  ---@param text string
+  ---@param no_cache? boolean
+  ---@return string
+  function obj:wrap(text, no_cache)
+    -- Do we even need to cache wrapped text? Is it really too much to do so every frame?
+    -- Not sure, haven't done any benchmarking.
+    if not no_cache then
+      local wrapped_text = self.cache[text] --[[@type string|nil]]
+      if wrapped_text then return wrapped_text end
     end
-    wrapped_text = wrapped_text .. word
+
+    text = text:gsub("\r+", ""):gsub("\n\n+", "\n")
+
+    local words = {}
+    for word in string.gmatch(text, "[^%s]+%s*") do
+      table.insert(words, word)
+    end
+
+    local wrapped_text = unpack(words, 1, 1)
+    local char_count = string.len(wrapped_text)
+    for _, word in pairs({ unpack(words, 2) }) do
+      char_count = char_count + string.len(word)
+      if char_count > self.wrap_at_char then
+        wrapped_text = string.gsub(wrapped_text, "%s+$", "") .. "\n"
+        char_count = string.len(word)
+      end
+      wrapped_text = wrapped_text .. word
+    end
+
+    if not no_cache then self.cache[text] = wrapped_text end
+    return wrapped_text
   end
 
-  return wrapped_text
+  return obj
 end
+
+local TextWrapper = NewTextWrapper()
+
+local search_text = ""
 
 -- This function is called to display the settings UI for this mod. your mod's settings wont be visible in the mod settings menu if this function isn't defined correctly.
 function ModSettingsGui(gui, in_main_menu)
@@ -457,15 +507,15 @@ function ModSettingsGui(gui, in_main_menu)
       gui,
       0,
       0,
-      WrapText(
+      TextWrapper:wrap(
         "Some error occurred while patching Meta Leveling; either it's due to a bug on the Meta Leveling side, or this mod's logic needs to be updated."
       )
     )
     GuiText(gui, 0, 0, " ")
     GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
-    GuiText(gui, 0, 0, "Detailed error report:\n--------------")
+    GuiText(gui, 0, 0, "Detailed error report below:\n------------------")
     GuiColorSetForNextWidget(gui, 1, 1, 1, 0.5)
-    GuiText(gui, 0, 0, WrapText(META_LEVELING.extra))
+    GuiText(gui, 0, 0, TextWrapper:wrap(META_LEVELING.extra))
     return
   end
 
